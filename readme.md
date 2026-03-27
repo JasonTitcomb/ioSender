@@ -13,6 +13,33 @@ Please check out the [Wiki](https://github.com/terjeio/Grbl-GCode-Sender/wiki) f
 Edge pre-releases can be [downloaded from here](https://www.io-engineering.com/downloads), they contains changes yet to be incorporated in a main release and might be buggy and even break existing functionality.  
 Use with care and please [post feedback](https://github.com/terjeio/ioSender/discussions/436) on any issues encountered!
 
+2.0.47p7:
+
+* Fix for jog buttons not working, ref. comment on issue [#468](https://github.com/terjeio/ioSender/issues/468#issuecomment-4136646179).
+
+* Added some key map methods:
+```
+KeypressHandler.FeedOverrideFinePlus
+KeypressHandler.FeedOverrideFineMinus
+KeypressHandler.FeedOverrideCoarseMinus
+KeypressHandler.FeedOverrideCoarsePlus
+KeypressHandler.FeedOverrideReset
+KeypressHandler.FeedOverrideRapidsMedium
+KeypressHandler.FeedOverrideRapidsLow
+KeypressHandler.FeedOverrideRapidsReset
+KeypressHandler.SpindleOverrideFinePlus
+KeypressHandler.SpindleOverrideFineMinus
+KeypressHandler.SpindleOverrideCoarseMinus
+KeypressHandler.SpindleOverrideCoarsePlus
+KeypressHandler.SpindleOverrideStop
+KeypressHandler.FloodOverrideToggle
+KeypressHandler.MistOverrideToggle
+KeypressHandler.Fan0Toggle
+KeypressHandler.ProbeConnectedToggle
+KeypressHandler.OptionalStopToggle
+KeypressHandler.SingleBlockToggle
+```
+
 2.0.47p6:
 
 * Fix for cannot close XL version when MPG mode is active. Ref. issue [#499](https://github.com/terjeio/ioSender/issues/499#issuecomment-3910302756).
