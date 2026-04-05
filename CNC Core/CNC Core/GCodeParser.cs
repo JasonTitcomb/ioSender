@@ -2387,7 +2387,10 @@ namespace CNC.GCode
 
             IJKMode = ijkMode;
             if((IjkFlags = ijkFlags) == IJKFlags.None)
-                R = this.r = r;
+            {
+                R = r;
+                this.r = Math.Abs(r);
+            }
 
             P = p;
         }
@@ -2425,13 +2428,18 @@ namespace CNC.GCode
         {
             if (!center_ok)
             {
-                if (isRelative)
+                // Normalize endpoint. If an axis is not present in the command then the endpoint is unchanged.
+                // In incremental (G91) mode an omitted axis means 0 increment.
+                for (int i = 0; i < 3; i++)
                 {
-                    for (int i = 0; i < 3; i++)
+                    AxisFlags axisFlag = i == 0 ? AxisFlags.X : (i == 1 ? AxisFlags.Y : AxisFlags.Z);
+                    if (AxisFlags.HasFlag(axisFlag))
                     {
-                        if(i != plane.AxisLinear)
+                        if (isRelative)
                             end[i] += start[i];
                     }
+                    else
+                        end[i] = start[i];
                 }
 
                 if (IsRadiusMode)
@@ -2651,14 +2659,24 @@ namespace CNC.GCode
         {
             center = new double[2];
 
+            // In R mode the sign of R selects which of the two possible arc centers to use.
+            // R < 0 means to use the "long" arc (sweep > 180 degrees).
+            bool useLongArc = R < 0d;
+            double radius = Math.Abs(R);
+            r = radius;
+
             // This math is copied from GRBL in gcode.c
             double x = end[plane.Axis0] - start[plane.Axis0];
             double y = end[plane.Axis1] - start[plane.Axis1];
 
-            double h_x2_div_d = 4d * R * R - x * x - y * y;
+            double h_x2_div_d = 4d * radius * radius - x * x - y * y;
             if (h_x2_div_d < 0d)
             {
-                Console.Write(LibStrings.FindResource("ParserRadiusErr"));
+                // Floating point roundoff can produce a tiny negative.
+                // Clamp to 0 to avoid NaN and let the arc degrade gracefully.
+                if (h_x2_div_d < -1e-9)
+                    Console.Write(LibStrings.FindResource("ParserRadiusErr"));
+                h_x2_div_d = 0d;
             }
 
             h_x2_div_d = (-Math.Sqrt(h_x2_div_d)) / Math.Sqrt(x * x + y * y);
@@ -2668,28 +2686,16 @@ namespace CNC.GCode
                 h_x2_div_d = -h_x2_div_d;
             }
 
-            // Special message from gcoder to software for which radius
-            // should be used.
-            //if (radius < 0d)
-            //{
-            //    h_x2_div_d = -h_x2_div_d;
-            //    // TODO: Places that use this need to run ABS on radius.
-            //    radius = -radius;
-            //}
+            if (useLongArc)
+                h_x2_div_d = -h_x2_div_d;
 
+    
             double offsetX = 0.5d * (x - (y * h_x2_div_d));
             double offsetY = 0.5d * (y + (x * h_x2_div_d));
 
-            if (IJKMode == IJKMode.Incremental)
-            {
-                center[0] = start[plane.Axis0] + offsetX;
-                center[1] = start[plane.Axis1] + offsetY;
-            }
-            else
-            {
-                center[0] = offsetX;
-                center[1] = offsetY;
-            }
+            // R mode always yields offsets from the start position; IJK mode (G90.1/G91.1) does not apply.
+            center[0] = start[plane.Axis0] + offsetX;
+            center[1] = start[plane.Axis1] + offsetY;
 
             return center;
         }
