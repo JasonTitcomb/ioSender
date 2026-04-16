@@ -6,9 +6,9 @@
              xmlns:local="clr-namespace:CNC.Controls.Viewer"
              xmlns:Controls="clr-namespace:CNC.Controls;assembly=CNC.Controls.WPF" x:Class="CNC.Controls.Viewer.ConfigControl"
              mc:Ignorable="d"
-             d:DesignHeight="370" d:DesignWidth="310">
-    <GroupBox x:Uid="grp_gcodeViewer" x:Name="grpGCodeViewer" Header="GCode Viewer" HorizontalAlignment="Left" VerticalAlignment="Top" Height="Auto" Width="310">
-        <StackPanel HorizontalAlignment="Left" Height="Auto" Margin="0,3,0,0" VerticalAlignment="Top">
+             d:DesignHeight="530.192" d:DesignWidth="310">
+    <GroupBox x:Uid="grp_gcodeViewer" x:Name="grpGCodeViewer" Header="GCode Viewer" HorizontalAlignment="Center" VerticalAlignment="Top" Height="481" Width="310">
+        <StackPanel HorizontalAlignment="Left" Height="468" VerticalAlignment="Top" Width="300" Margin="7,0,0,0">
             <CheckBox x:Uid="lbl_enable" Content="Enable" Margin="160,2,0,0" IsChecked="{Binding Path=GCodeViewer.IsEnabled, Mode=TwoWay}"/>
             <Controls:NumericField x:Uid="fld_arcResolution" Label="Arc resolution:" Unit="segments" Format="#0" ColonAt="160" Value="{Binding Path=GCodeViewer.ArcResolution, Mode=TwoWay}" IsEnabled="{Binding Path=GCodeViewer.IsEnabled, Mode=OneWay}"/>
             <Controls:NumericField x:Uid="fld_minDistance" Label="Min distance:" ColonAt="160" Value="{Binding Path=GCodeViewer.MinDistance, Mode=TwoWay}" IsEnabled="{Binding Path=GCodeViewer.IsEnabled, Mode=OneWay}"/>
@@ -33,6 +33,10 @@
             <StackPanel Orientation="Horizontal" Height="Auto">
                 <Label x:Uid="lbl_gridColor" Content="Grid color:" Width="160" HorizontalContentAlignment="Right"/>
                 <local:ColorPicker x:Name="_colorPicker3" SelectedColor="{Binding Path=GCodeViewer.GridColor, Mode=TwoWay}" IsEnabled="{Binding Path=GCodeViewer.IsEnabled, Mode=OneWay}" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Height="Auto">
+                <Label x:Uid="lbl_toolTrailColor" Content="Tool trace color:" Width="160" HorizontalContentAlignment="Right"/>
+                <local:ColorPicker x:Name="_colorPicker5" SelectedColor="{Binding Path=GCodeViewer.ToolTrailColor, Mode=TwoWay}" IsEnabled="{Binding Path=GCodeViewer.IsEnabled, Mode=OneWay}" VerticalAlignment="Center"/>
             </StackPanel>
             <CheckBox x:Uid="lbl_blackBackgroud" Content="Black background" Margin="5,2,0,0" IsChecked="{Binding Path=GCodeViewer.BlackBackground, Mode=TwoWay}" IsEnabled="{Binding Path=GCodeViewer.IsEnabled, Mode=OneWay}"/>
             <CheckBox x:Uid="lbl_showGrid" Content="Show grid" Margin="5,2,0,0" IsChecked="{Binding Path=GCodeViewer.ShowGrid, Mode=TwoWay}" IsEnabled="{Binding Path=GCodeViewer.IsEnabled, Mode=OneWay}"/>

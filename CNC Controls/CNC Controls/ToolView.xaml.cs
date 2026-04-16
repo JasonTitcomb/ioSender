@@ -93,6 +93,7 @@ namespace CNC.Controls
 
         public void Setup(UIViewModel model, AppConfig profile)
         {
+
         }
 
         #endregion
@@ -121,6 +122,10 @@ namespace CNC.Controls
             if (GrblInfo.LatheModeEnabled)
             {
                 dgrTools.Columns[1].Header = string.Format("X offset ({0})", GrblWorkParameters.LatheMode == LatheMode.Radius ? "R" : "D");
+                cvXOffset.Label = dgrTools.Columns[1].Header + ":";
+            } else if (GrblInfo.HasCutterComp)
+            {
+                dgrTools.Columns[1].Header = "Cutter Radius";
                 cvXOffset.Label = dgrTools.Columns[1].Header + ":";
             }
         }
