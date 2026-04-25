@@ -15,18 +15,11 @@
         <system:String x:Uid="str_pause" x:Key="JobPause">Pause</system:String>
         <system:String x:Uid="str_checking" x:Key="Checking">Checking...</system:String>
         <system:String x:Uid="str_transferComplete" x:Key="TransferComplete">Transfer complete</system:String>
-        <Style x:Key="JobButtonStyle" TargetType="Button">
-            <Setter Property="MinWidth" Value="95" />
-            <Setter Property="MaxWidth" Value="120" />
-            <Setter Property="Padding" Value="5,0" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="Focusable" Value="False" />
-        </Style>
     </UserControl.Resources>
     <StackPanel Orientation="Horizontal">
-        <Button x:Uid="btn_cycleStart" x:Name="btnStart" Content="Cycle Start" ToolTip="Alt+R" Style="{StaticResource JobButtonStyle}" Click="btnStart_Click"/>
-        <Button x:Uid="btn_feedHold" x:Name="btnHold" Content="Feed Hold" ToolTip="Space" Style="{StaticResource JobButtonStyle}" Margin="5,0,0,0" Click="btnHold_Click"/>
-        <Button x:Uid="btn_stop" x:Name="btnStop" Content="Stop" ToolTip="Alt+S" Style="{StaticResource JobButtonStyle}" Margin="5,0,0,0" Click="btnStop_Click"/>
-        <Button x:Uid="btn_rewind" x:Name="btnRewind" Content="Rewind" Style="{StaticResource JobButtonStyle}" Margin="5,0,0,0" Click="btnRewind_Click"/>
+        <Button x:Uid="btn_cycleStart" x:Name="btnStart" Content="Cycle Start" ToolTip="Alt+R" Click="btnStart_Click"/>
+        <Button x:Uid="btn_feedHold" x:Name="btnHold" Content="Feed Hold" ToolTip="Space" Margin="5,0,0,0" Click="btnHold_Click"/>
+        <Button x:Uid="btn_stop" x:Name="btnStop" Content="Stop" ToolTip="Alt+S" Margin="5,0,0,0" Click="btnStop_Click"/>
+        <Button x:Uid="btn_rewind" x:Name="btnRewind" Content="Rewind" Margin="5,0,0,0" Click="btnRewind_Click"/>
     </StackPanel>
 </UserControl>

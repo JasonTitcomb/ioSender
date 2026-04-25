@@ -6,19 +6,16 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Theme container: ChangeTheme() in App.xaml.cs swaps the inner merged dictionary. -->
-                <ResourceDictionary>
-                    <ResourceDictionary.MergedDictionaries>
-                        <ResourceDictionary Source="Themes/LightTheme.xaml"/>
-                    </ResourceDictionary.MergedDictionaries>
-                </ResourceDictionary>
+                <!-- Active theme. App.ChangeTheme() in App.xaml.cs replaces this entry. -->
+                <ResourceDictionary Source="Themes/LightTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style TargetType="Button" x:Key="btnSidebar">
-                <Setter Property="Background" Value="#FFEFEFEF"/>
+                <Setter Property="Background" Value="{DynamicResource AppFlyoutBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="3" BorderThickness="1" BorderBrush="DarkGray">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="3" BorderThickness="1" BorderBrush="{DynamicResource AppFlyoutBorderBrush}">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </ControlTemplate>
