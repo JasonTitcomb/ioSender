@@ -39,6 +39,9 @@
     <Localizable>False</Localizable>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ICSharpCode.AvalonEdit, Version=6.3.1.120, Culture=neutral, PublicKeyToken=9cc39be672370310, processorArchitecture=MSIL">
+      <HintPath>..\..\ioSender\packages\AvalonEdit.6.3.1.120\lib\net462\ICSharpCode.AvalonEdit.dll</HintPath>
+    </Reference>
     <Reference Include="RP.Math.Vector3">
       <HintPath>..\..\Vector-master\RP.Math.Vector3\bin\Release\RP.Math.Vector3.dll</HintPath>
     </Reference>
@@ -70,6 +73,9 @@
     <Compile Include="ArcsToLines.cs" />
     <Compile Include="BasicConfigControl.xaml.cs">
       <DependentUpon>BasicConfigControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="GcodeTextControl.xaml.cs">
+      <DependentUpon>GcodeTextControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="GrblConfigControl.xaml.cs">
       <DependentUpon>GrblConfigControl.xaml</DependentUpon>
@@ -253,6 +259,10 @@
       <DependentUpon>WorkParametersControl.xaml</DependentUpon>
     </Compile>
     <Page Include="About.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="GcodeTextControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -518,11 +528,13 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="app.config" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>PublicSettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <EmbeddedResource Include="Resources\gcode.xshd" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CNC Core\CNC Core\CNC Core.csproj">
@@ -559,6 +571,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\reset.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\save.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

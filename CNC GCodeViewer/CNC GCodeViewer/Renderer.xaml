@@ -20,6 +20,7 @@
                            ShowViewCube="{Binding Path=ShowViewCube}"
                            ShowCoordinateSystem="{Binding Path=ShowCoordinateSystem}"
                            Background="{Binding Path=CanvasColor}"
+                           CameraInertiaFactor="0"
                            AllowDrop="True" DragEnter="viewport_Drag" DragOver="viewport_Drag" DragLeave="viewport_Drag" Drop="viewport_Drop" Orthographic="True">
         <helix:HelixViewport3D.Camera>
             <PerspectiveCamera x:Name="ccamera"

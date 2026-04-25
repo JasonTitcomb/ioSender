@@ -1398,7 +1398,7 @@ namespace CNC.GCode
                         case Commands.G41_1:
                         case Commands.G42_1:
                             if (wordFlags.HasFlag(WordFlags.D))
-                                ToolDiameter = IsImperial ? gcValues.D * 25.4d : gcValues.D;
+                                ToolDiameter = Math.Abs(gcValues.D);
                             break;
 
                         case Commands.G41:

@@ -116,8 +116,6 @@ namespace CNC.Controls.Viewer
         private ToolVisualizerType _toolmode = ToolVisualizerType.None;
         private RenderMode _renderMode = RenderMode.Mode3D;
         private Dictionary<ToolVisualizerType, string> _toolModes;
-        private double RapidDashLength = 2.5d;
-        private double RapidGapLength = 1.5d;
 
         private Dictionary<RenderMode, string> _renderModes = new Dictionary<RenderMode, string>()
         {
@@ -142,7 +140,7 @@ namespace CNC.Controls.Viewer
         {
             //   Grid = null;
             //   BoundingBox = null;
-            ToolOrigin = CutLines = RapidLines = ExecutedLines = null;
+            ToolOrigin = CutLines = RapidLines = RetractLines = ExecutedLines = null;
             // Don't clear ToolTrail - it should persist during job execution
             WorkEnvelope = JobEnvelope = null;
         }
@@ -285,6 +283,8 @@ namespace CNC.Controls.Viewer
         private LinesVisual3D toolTrailVisual;
         private List<LinesVisual3D> toolCircleVisuals = new List<LinesVisual3D>();
         private Point3D lastToolPosition;
+        private bool wasJobRunning = false;
+        private List<BoxVisual3D> pauseMarkers = new List<BoxVisual3D>();
 
         private TruncatedConeVisual3D tool;
         private BoundingBoxWireFrameVisual3D workEnvelope = new BoundingBoxWireFrameVisual3D()
@@ -356,6 +356,7 @@ namespace CNC.Controls.Viewer
             if (!System.ComponentModel.DesignerProperties.GetIsInDesignMode(this) && model == null)
             {
                 model = DataContext as GrblViewModel;
+                wasJobRunning = model != null && model.IsJobRunning;
                 AppConfig.Settings.GCodeViewer.PropertyChanged += GCodeViewer_PropertyChanged;
                 Configure();
             }
@@ -460,6 +461,11 @@ namespace CNC.Controls.Viewer
                         zoomSubscribed = false;
                         viewport.PreviewMouseWheel -= MouseWheel_Preview;
                     }
+                    else if (!zoomSubscribed && pauseMarkers.Count > 0)
+                    {
+                        zoomSubscribed = true;
+                        viewport.PreviewMouseWheel += MouseWheel_Preview;
+                    }
                     break;
 
                 case nameof(Machine.ShowAxes):
@@ -517,6 +523,12 @@ namespace CNC.Controls.Viewer
                     }
                     AddWorkEnvelope();
                     break;
+
+                case nameof(GrblViewModel.IsJobRunning):
+                    if (model.IsJobRunning && !wasJobRunning)
+                        ClearToolTraceCache();
+                    wasJobRunning = model.IsJobRunning;
+                    break;
             }
         }
 
@@ -533,7 +545,10 @@ namespace CNC.Controls.Viewer
         private void MouseWheel_Preview(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             if (IsJobLoaded)
+            {
                 ShowConeTool();
+                UpdatePauseMarkerSizes();
+            }
             //model.ResponseLog.Add(string.Format("M: {0} {1} {2}", e.Delta, viewport.Camera.Position.Z, viewport.Camera.LookDirection.Z));
             //pl = viewport.Camera.LookDirection.Length;
 
@@ -698,6 +713,10 @@ namespace CNC.Controls.Viewer
             foreach (var points in toolCircleHistoryLayers)
                 points.Clear();
 
+            foreach (var marker in pauseMarkers)
+                viewport.Children.Remove(marker);
+            pauseMarkers.Clear();
+
             if (job != null)
             {
                 job.Dispose();
@@ -760,12 +779,23 @@ namespace CNC.Controls.Viewer
                 if (hasMoved)
                     AddToolCircle(historyPoint);
 
+                if (toolPathHistory.Count > 0)
+                {
+                    toolPathHistory.Add(lastToolPosition);
+                    toolPathHistory.Add(historyPoint);
+                }
+                else
+                {
+                    toolPathHistory.Add(historyPoint);
+                    toolPathHistory.Add(historyPoint);
+                }
+
                 lastToolPosition = historyPoint;
-                Machine.ToolTrail = null;
+                Machine.ToolTrail = toolPathHistory;
 
                 if (toolTrailVisual != null)
                 {
-                    toolTrailVisual.Points = null;
+                    toolTrailVisual.Points = toolPathHistory;
                 }
 
                 RefreshToolCircleVisuals();
@@ -806,7 +836,7 @@ namespace CNC.Controls.Viewer
 
         private void AddToolCircle(Point3D center)
         {
-            double radius = GetToolTraceDiameter() / 2d;
+            double radius = GetToolTraceDiameterInDisplayUnits() / 2d;
 
             if (radius <= 0d)
                 return;
@@ -839,13 +869,32 @@ namespace CNC.Controls.Viewer
         {
             if (show)
             {
+                if (toolTrailVisual != null)
+                    toolTrailVisual.Points = toolPathHistory;
                 RefreshToolCircleVisuals();
             }
             else
             {
+                if (toolTrailVisual != null)
+                    toolTrailVisual.Points = null;
                 for (int i = 0; i < toolCircleVisuals.Count; i++)
                     toolCircleVisuals[i].Points = null;
             }
+        }
+
+        private void ClearToolTraceCache()
+        {
+            toolPathHistory.Clear();
+
+            foreach (var points in toolCircleHistoryLayers)
+                points.Clear();
+
+            Machine.ToolTrail = null;
+
+            if (toolTrailVisual != null)
+                toolTrailVisual.Points = null;
+
+            RefreshToolCircleVisuals();
         }
 
         private void UpdateToolCircleColors()
@@ -874,11 +923,30 @@ namespace CNC.Controls.Viewer
             if (parserToolDiameter <= 0d)
             {
                 Tool parserTool = GCode.File.Parser.SelectedTool;
-                if (parserTool != null)
+                if (parserTool != null && parserTool.R > 0d)
                     parserToolDiameter = parserTool.R * 2d;
             }
 
+            if (parserToolDiameter <= 0d && model != null)
+            {
+                string toolCode = model.Tool;
+                if (!string.IsNullOrEmpty(toolCode))
+                {
+                    Tool workTool = GrblWorkParameters.Tools.Where(t => t.Code == toolCode).FirstOrDefault();
+                    if (workTool != null && workTool.R > 0d)
+                        parserToolDiameter = workTool.R * 2d;
+                }
+            }
+            parserToolDiameter = Math.Abs(parserToolDiameter);
             return parserToolDiameter > 0d ? parserToolDiameter : AppConfig.Settings.GCodeViewer.ToolDiameter;
+        }
+
+        private double GetToolTraceDiameterInDisplayUnits()
+        {
+            double diameter = GetToolTraceDiameter();
+            if (model != null && !model.IsMetric)
+                diameter *= 25.4d;
+            return diameter;
         }
 
         private void ShowConeTool()
@@ -1008,10 +1076,12 @@ namespace CNC.Controls.Viewer
 
         void RenderExecuting(int block)
         {
-            if (block == -1)
+            if (block <= 0)
             {
                 if (Machine.ExecutedLines != null)
                     Machine.ExecutedLines.Clear();
+                Machine.RapidLines = null;
+                Machine.RetractLines = null;
                 if (job != null)
                 {
                     job.Dispose();
@@ -1338,6 +1408,15 @@ namespace CNC.Controls.Viewer
                     case Commands.G5_1:
                         DrawQuadraticSpline(cmd.Token as GCQuadraticSpline, point0.ToArray());
                         break;
+
+                    case Commands.M0:
+                    case Commands.M1:
+                        AddPauseMarker(cmd.End, Colors.Red);
+                        break;
+
+                    case Commands.G4:
+                        AddPauseMarker(cmd.End, Colors.Yellow);
+                        break;
                 }
             }
 
@@ -1357,9 +1436,19 @@ namespace CNC.Controls.Viewer
                 emu.SetStartPosition(Machine.StartPosition);
                 job = emu.Execute(tokens).GetEnumerator();
                 job.MoveNext();
+
             }
             else
                 Machine.CutLines = cutPoints;
+
+            if (tool != null)
+                tool.TopRadius = GetToolTraceDiameterInDisplayUnits() / 2d;
+
+            if (pauseMarkers.Count > 0 && !zoomSubscribed)
+            {
+                zoomSubscribed = true;
+                viewport.PreviewMouseWheel += MouseWheel_Preview;
+            }
         }
 
         private Point3D toPoint(double[] values, bool isRelative = false)
@@ -1371,75 +1460,6 @@ namespace CNC.Controls.Viewer
 
             return p;
         }
-
-        private Point3D ProjectToCurrentRenderMode(Point3D point)
-        {
-            switch (Machine.RenderMode)
-            {
-                case RenderMode.Mode3D:
-                    return point;
-
-                case RenderMode.Mode2DXY:
-                    return new Point3D(point.X, point.Y, 0d);
-
-                case RenderMode.Mode2DXZ:
-                    return new Point3D(point.X, 0d, point.Z);
-
-                case RenderMode.Mode2DYZ:
-                    return new Point3D(0d, point.Y, point.Z);
-
-                default:
-                    return point;
-            }
-        }
-
-        private static Point3D MoveAlong(Point3D start, Vector3D directionUnit, double distance)
-        {
-            return new Point3D(
-                start.X + directionUnit.X * distance,
-                start.Y + directionUnit.Y * distance,
-                start.Z + directionUnit.Z * distance);
-        }
-
-        private void AddDashedLine(Point3D start, Point3D end, Point3DCollection target, double dashLength, double gapLength)
-        {
-            if (dashLength <= 0d)
-                return;
-
-            if (gapLength < 0d)
-                gapLength = 0d;
-
-            Vector3D v = end - start;
-            double length = v.Length;
-
-            if (length <= 0d)
-                return;
-
-            double step = dashLength + gapLength;
-            if (step <= 0d)
-                return;
-
-            v.Normalize();
-
-            // Fit pattern to full segment to avoid a large trailing gap.
-            int dashCount = Math.Max(1, (int)Math.Round((length + gapLength) / step));
-            double patternLength = dashCount * dashLength + (dashCount - 1) * gapLength;
-            double scale = patternLength > 0d ? length / patternLength : 1d;
-
-            double fittedDashLength = dashLength * scale;
-            double fittedGapLength = gapLength * scale;
-            double fittedStep = fittedDashLength + fittedGapLength;
-
-            for (int i = 0; i < dashCount; i++)
-            {
-                double dashStart = i * fittedStep;
-                double dashEnd = Math.Min(dashStart + fittedDashLength, length);
-
-                target.Add(MoveAlong(start, v, dashStart));
-                target.Add(MoveAlong(start, v, dashEnd));
-            }
-        }
-
 
         public void AddRapidMove(Point3D point)
         {
@@ -1469,12 +1489,28 @@ namespace CNC.Controls.Viewer
             if (lastType == MoveType.Cut)
                 delta0 = new Vector3D(0d, 0d, 0d);
 
-            Point3D startProjected = ProjectToCurrentRenderMode(point0);
-            Point3D endProjected = ProjectToCurrentRenderMode(point);
-            double rapidDashLength = Math.Abs(viewport.Camera.Position.DistanceTo(Machine.ToolPosition)) / 1250d / ccamera.FieldOfView;
-            double rapidGapLength = Math.Abs(viewport.Camera.Position.DistanceTo(Machine.ToolPosition)) / 1250d / ccamera.FieldOfView;
+            if (Machine.RenderMode == RenderMode.Mode3D)
+            {
+                rapidPoints.Add(point0);
+                rapidPoints.Add(point);
+            }
+            else switch (Machine.RenderMode)
+                {
+                    case RenderMode.Mode2DXY:
+                        rapidPoints.Add(new Point3D(point0.X, point0.Y, 0d));
+                        rapidPoints.Add(new Point3D(point.X, point.Y, 0d));
+                        break;
 
-            AddDashedLine(startProjected, endProjected, rapidPoints, 0.1, 0.1);
+                    case RenderMode.Mode2DXZ:
+                        rapidPoints.Add(new Point3D(point0.X, 0d, point0.Z));
+                        rapidPoints.Add(new Point3D(point.X, 0d, point.Z));
+                        break;
+
+                    case RenderMode.Mode2DYZ:
+                        rapidPoints.Add(new Point3D(0d, point0.Y, point0.Z));
+                        rapidPoints.Add(new Point3D(0d, point.Y, point.Z));
+                        break;
+                }
 
             cutCount = 0;
             lastType = MoveType.Rapid;
@@ -1646,6 +1682,50 @@ namespace CNC.Controls.Viewer
 
             foreach (Point3D point in points)
                 AddCutMove(point);
+        }
+
+        private void AddPauseMarker(Point3D position, Color color)
+        {
+            double markerSize = Math.Abs(viewport.Camera.Position.DistanceTo(position)) / 8250d / ccamera.FieldOfView;
+            Point3D markerCenter = position;
+
+            switch (Machine.RenderMode)
+            {
+                case RenderMode.Mode2DXY:
+                    markerCenter = new Point3D(position.X, position.Y, 0d);
+                    break;
+
+                case RenderMode.Mode2DXZ:
+                    markerCenter = new Point3D(position.X, 0d, position.Z);
+                    break;
+
+                case RenderMode.Mode2DYZ:
+                    markerCenter = new Point3D(0d, position.Y, position.Z);
+                    break;
+            }
+
+            var marker = new BoxVisual3D
+            {
+                Center = markerCenter,
+                Width = markerSize,
+                Height = markerSize,
+                Length = markerSize,
+                Fill = new SolidColorBrush(color)
+            };
+
+            pauseMarkers.Add(marker);
+            viewport.Children.Add(marker);
+        }
+
+        public void UpdatePauseMarkerSizes()
+        {
+            foreach (var marker in pauseMarkers)
+            {
+                double markerSize = Math.Abs(viewport.Camera.Position.DistanceTo(marker.Center)) / 8250d / ccamera.FieldOfView;
+                marker.Width = markerSize;
+                marker.Height = markerSize;
+                marker.Length = markerSize;
+            }
         }
     }
 }

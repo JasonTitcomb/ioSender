@@ -68,6 +68,11 @@ namespace CNC.Controls
             GCode.File.Load((DataContext as GrblViewModel).FileName);
         }
 
+        void btnSave_Click(object sender, RoutedEventArgs e)
+        {
+            GCode.File.Save();
+        }
+
         void btnClose_Click(object sender, RoutedEventArgs e)
         {
             GCode.File.Close();

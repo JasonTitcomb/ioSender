@@ -673,6 +673,8 @@ namespace CNC.Core
                     Tool = GrblParserState.Tool;
                 if (GrblParserState.LatheMode != _latheMode)
                     LatheMode = GrblParserState.LatheMode;
+                if (GrblParserState.IsMetric != IsMetric)
+                    IsMetric = GrblParserState.IsMetric;
                 if (GrblParserState.IsActive("G51") != null)
                     Set("Sc", GrblParserState.IsActive("G51"));
                 if (GrblState.State != GrblStates.Check)
@@ -1029,6 +1031,8 @@ namespace CNC.Core
                         Signals.Value = (Signals)s;
                         if(Signals.Value.HasFlag(Core.Signals.EStop) && !OptionalSignals.Value.HasFlag(Core.Signals.EStop))
                             OptionalSignals.Value |= Core.Signals.EStop;
+                        if(Signals.Value.HasFlag(Core.Signals.SingleBlock) && !OptionalSignals.Value.HasFlag(Core.Signals.SingleBlock))
+                            OptionalSignals.Value |= Core.Signals.SingleBlock;
 //                        CanReset = canReset();
                     }
                     break;
