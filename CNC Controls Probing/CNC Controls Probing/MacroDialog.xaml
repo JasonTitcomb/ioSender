@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CNC.Controls.Probing"
         mc:Ignorable="d" Height="255" Width="475"
-        WindowStartupLocation="Manual" Icon="App.ico" ResizeMode="NoResize" ShowInTaskbar="False" Background="#FFE5E5E5"
+        Background="{DynamicResource AppDialogBackgroundBrush}"
         x:Uid="dlg_probingMacros" Title="Probing macros" Closed="Window_Closed" >
     <Window.Resources>
         <Style x:Key="MenuButtonStyle" TargetType="Button">

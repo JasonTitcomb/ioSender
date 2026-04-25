@@ -73,6 +73,33 @@ namespace GCode_Sender
             ThemeDictionary.MergedDictionaries.Add(new ResourceDictionary() { Source = uri });
         }
 
+        private static readonly Uri LightThemeUri = new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+        private static readonly Uri DarkThemeUri = new Uri("Themes/DarkTheme.xaml", UriKind.Relative);
+
+        public static bool IsDarkMode { get; private set; }
+
+        /// <summary>
+        /// Applies the WPF theme matching the supplied theme name from <see cref="Config.Theme"/>.
+        /// "Black" and "Dark" are treated as dark themes; everything else falls back to light.
+        /// </summary>
+        public static void ApplyTheme(string themeName)
+        {
+            bool dark = !string.IsNullOrEmpty(themeName) &&
+                        (themeName.Equals("Dark", StringComparison.OrdinalIgnoreCase) ||
+                         themeName.Equals("Black", StringComparison.OrdinalIgnoreCase));
+            ApplyTheme(dark);
+        }
+
+        public static void ApplyTheme(bool dark)
+        {
+            var app = Current as App;
+            if (app == null)
+                return;
+
+            app.ChangeTheme(dark ? DarkThemeUri : LightThemeUri);
+            IsDarkMode = dark;
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             string[] args = Environment.GetCommandLineArgs();

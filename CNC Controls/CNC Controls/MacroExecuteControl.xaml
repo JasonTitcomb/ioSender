@@ -24,7 +24,7 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <Border BorderBrush="DarkGray" BorderThickness="1" CornerRadius="3" Background="#FFE5E5EA">
+    <Border BorderBrush="{DynamicResource AppFlyoutBorderBrush}" BorderThickness="1" CornerRadius="3" Background="{DynamicResource AppFlyoutBackgroundBrush}">
         <Grid Width="315" Height="220">
             <ItemsControl ItemsSource="{Binding Path=Macros, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <ItemsControl.ItemTemplate>

@@ -16,7 +16,7 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Border BorderBrush="DarkGray" BorderThickness="1" CornerRadius="3" Background="#FFE5E5EA">
+    <Border BorderBrush="{DynamicResource AppFlyoutBorderBrush}" BorderThickness="1" CornerRadius="3" Background="{DynamicResource AppFlyoutBackgroundBrush}">
         <Grid Width="275" Margin="10,0,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="25"/>

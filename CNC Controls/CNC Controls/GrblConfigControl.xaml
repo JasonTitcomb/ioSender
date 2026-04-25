@@ -122,7 +122,7 @@
             </DockPanel>
             <StackPanel x:Name="details" DockPanel.Dock="Top" HorizontalAlignment="Left" Height="Auto" Margin="5,5,0,0" VerticalAlignment="Top">
                 <StackPanel x:Name="canvas" HorizontalAlignment="Left" Height="Auto" VerticalAlignment="Center" Width="455"/>
-                <TextBox x:Name="txtDescription" Background="#FFF8F8F8" IsReadOnly="True" Margin="5,0,0,0" HorizontalAlignment="Left" Height="180" TextWrapping="Wrap" VerticalAlignment="Top" Width="550"/>
+                <TextBox x:Name="txtDescription" Background="{DynamicResource AppReadOnlyTextBoxBrush}" IsReadOnly="True" Margin="5,0,0,0" HorizontalAlignment="Left" Height="180" TextWrapping="Wrap" VerticalAlignment="Top" Width="550"/>
             </StackPanel>
         </DockPanel>
     </DockPanel>
