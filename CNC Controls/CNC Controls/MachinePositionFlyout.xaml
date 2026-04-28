@@ -34,7 +34,7 @@
                 <local:NumericField Label="C:" Unit="" ColonAt="20" Value="{Binding Path=MachinePosition.C, Mode=OneWay}" Format="{Binding Path=FormatSigned}" IsReadOnly="True" HorizontalAlignment="Left" Margin="-10,0,0,0" VerticalAlignment="Top" Style="{StaticResource CAxisVisibleStyle}"/>
             </StackPanel>
             <TextBlock x:Uid="lbl_machinePosition" Text="Machine Position" Margin="0,4,0,0"/>
-            <Button Content="×" Focusable="False" VerticalContentAlignment="Top" HorizontalAlignment="Right" Margin="0,0,5,0" VerticalAlignment="Top" Width="14" Height="18" Click="btn_Close"/>
+            <Button Content="×" Style="{DynamicResource FlyoutCloseButtonStyle}" Focusable="False" VerticalContentAlignment="Top" HorizontalAlignment="Right" Margin="0,0,5,0" VerticalAlignment="Top" Width="14" Height="18" Click="btn_Close"/>
         </Grid>
     </Border>
 </UserControl>

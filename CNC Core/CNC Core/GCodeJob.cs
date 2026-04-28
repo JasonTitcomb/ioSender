@@ -92,6 +92,7 @@ namespace CNC.Core
 
         public delegate void FileChangedHandler(string filename);
         public event FileChangedHandler FileChanged = null;
+        bool _Editing;
 
         public GCodeJob()
         {
@@ -107,6 +108,14 @@ namespace CNC.Core
 
         public ObservableCollection<GCodeBlock> Blocks { get { return blocks; } }
         public bool Loaded { get { return blocks.Count > 0; } }
+        public bool Editing { 
+            get { return Loaded && _Editing; }
+            set { 
+                if(Loaded)
+                    _Editing = true; 
+            }
+        }
+
         public bool HeightMapApplied { get; set; }
 
         public List<GCodeToken> Tokens { get { return Parser.Tokens; } }
@@ -118,11 +127,19 @@ namespace CNC.Core
 
         public bool LoadFile(string filename)
         {
+            using (StreamReader sr = new FileInfo(filename).OpenText())
+                return Load(filename, sr);
+        }
+
+        public bool LoadText(string filename, string text)
+        {
+            using (StringReader sr = new StringReader(text ?? string.Empty))
+                return Load(filename, sr);
+        }
+
+        private bool Load(string filename, TextReader sr)
+        {
             bool ok = true, isComment;
-
-            FileInfo file = new FileInfo(filename);
-
-            StreamReader sr = file.OpenText();
 
             string block = sr.ReadLine();
 
@@ -152,8 +169,6 @@ namespace CNC.Core
                         block = null;
                 }
             }
-
-            sr.Close();
 
             if (ok)
                 AddBlock("", Action.End);

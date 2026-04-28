@@ -56,7 +56,7 @@ namespace GCode_Sender
 
     public partial class MainWindow : Window
     {
-        private const string version = "2.0.46";
+        private const string version = "2.1.0";
         public static MainWindow ui = null;
         public static CNC.Controls.Viewer.Viewer GCodeViewer = null;
         public static UIViewModel UIViewModel { get; } = new UIViewModel();

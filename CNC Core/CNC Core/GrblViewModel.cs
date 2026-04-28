@@ -54,7 +54,7 @@ namespace CNC.Core
         private string[] _rtState = new string[3];
         private bool has_wco = false, _hasFans = false, _multiProbe = false;
         private SDState _sdMounted = SDState.Unmounted;
-        private bool _flood, _mist, _fan0, _toolChange, _reset, _isMPos, _isJobRunning, _isProbeSuccess, _pgmEnd, _isParserStateLive, _isTloRefSet;
+        private bool _flood, _mist, _fan0, _toolChange, _reset, _isMPos, _isJobRunning, _isProbeSuccess, _pgmEnd, _isParserStateLive, _isTloRefSet, _isFileEditing;
         private bool _isCameraVisible = false, _responseLogVerbose = false, _isProbing = false, _autoReporting = false;
         private bool? _mpg;
         private int _pwm, _line, _scrollpos, _blocks = 0, _startFromBlock = 0, _executingBlock = 0, _auxinValue = -2, _autoReportInterval = 0, _spindle_num = 0;
@@ -453,10 +453,29 @@ namespace CNC.Core
         public EnumFlags<Signals> Signals { get; private set; } = new EnumFlags<Signals>(Core.Signals.Off);
         public EnumFlags<Signals> OptionalSignals { get; set; } = new EnumFlags<Signals>(Core.Signals.Off);
         public EnumFlags<AxisFlags> AxisScaled { get; private set; } = new EnumFlags<AxisFlags>(AxisFlags.None);
-        public string FileName { get { return _fileName; } set { _fileName = value; SDRewind = false; OnPropertyChanged(); OnPropertyChanged(nameof(IsFileLoaded)); OnPropertyChanged(nameof(IsPhysicalFileLoaded)); } }
+        public string FileName { get { return _fileName; } set { _fileName = value; SDRewind = false; OnPropertyChanged(); OnPropertyChanged(nameof(IsFileLoaded)); OnPropertyChanged(nameof(IsPhysicalFileLoaded)); OnPropertyChanged(nameof(CanCloseFile)); OnPropertyChanged(nameof(CanReloadFile)); } }
         public bool IsSDCardJob { get { return FileName.StartsWith("SDCard:"); } }
         public bool SDRewind { get; set; }
         public bool IsFileLoaded { get { return _fileName != string.Empty; } }
+
+        public bool IsFileEditing
+        {
+            get { return _isFileEditing; }
+            set
+            {
+                if (_isFileEditing != value)
+                {
+                    _isFileEditing = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(CanOpenFile));
+                    OnPropertyChanged(nameof(CanCloseFile));
+                    OnPropertyChanged(nameof(CanReloadFile));
+                }
+            }
+        }
+        public bool CanOpenFile { get { return !_isFileEditing; } }
+        public bool CanCloseFile { get { return IsFileLoaded && !_isFileEditing; } }
+        public bool CanReloadFile { get { return IsPhysicalFileLoaded; } }
         public int Blocks
         {
             get { return _blocks; }
@@ -747,11 +766,11 @@ namespace CNC.Core
                         break;
 
                     case GrblStates.Check:
-                        _grblState.Color = Colors.White;
+                        _grblState.Color = Colors.LightBlue;
                         break;
 
                     default:
-                        _grblState.Color = Colors.White;
+                        _grblState.Color = Colors.LightBlue;
                         break;
                 }
 

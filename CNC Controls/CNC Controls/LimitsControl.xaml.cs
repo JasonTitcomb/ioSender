@@ -76,12 +76,6 @@ namespace CNC.Controls
                 var model = (GrblViewModel)sender;
                 SyncRadioButtons(model.IsMetric);
             }
-            else if (e.PropertyName == nameof(GrblViewModel.IsJobRunning))
-            {
-                var model = (GrblViewModel)sender;
-                rbIN.IsEnabled = !model.IsJobRunning;
-                rbMM.IsEnabled = !model.IsJobRunning;
-            }
             else if (e.PropertyName == nameof(GrblViewModel.FileName))
             {
                 if (GCode.File.IsLoaded)
