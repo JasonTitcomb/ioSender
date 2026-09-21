@@ -361,14 +361,23 @@ namespace CNC.Controls.Viewer
                 wasJobRunning = model != null && model.IsJobRunning;
                 AppConfig.Settings.GCodeViewer.PropertyChanged += GCodeViewer_PropertyChanged;
                 Configure();
+                UpdateAnimateSubscription(IsVisible);
             }
         }
 
         private void Renderer_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
+            UpdateAnimateSubscription((bool)e.NewValue);
+        }
+
+        private void UpdateAnimateSubscription(bool isVisible)
+        {
+            if (model == null)
+                return;
+
             if (Machine.ToolMode != ToolVisualizerType.None)
             {
-                if ((bool)e.NewValue)
+                if (isVisible)
                 {
                     if (!_animateSubscribed)
                         model.PropertyChanged += Model_PropertyChanged;

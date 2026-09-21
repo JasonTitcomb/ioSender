@@ -445,6 +445,23 @@ namespace CNC.GCode
                       block.StartsWith("(ABORT,");
         }
 
+        public static string StripLineNumber(string block)
+        {
+            int idx = 1;
+            if (block.StartsWith("N"))
+            {
+                    for (idx = 1; idx < block.Length; idx++)
+                    {
+                        if (!char.IsDigit(block[idx]))
+                        {
+                            break;
+                        }
+                    }
+                    return block.Substring(idx);
+            }
+            return block;
+        }
+
         public bool ParseBlock(ref string line, bool quiet)
         {
             uint lineNumber;

@@ -831,7 +831,8 @@ namespace CNC.Controls
                     if (sent == "ok")
                         return GetIndicator(GCodeLineStatus.Complete);
 
-                    return GetIndicator(GCodeLineStatus.Info);
+                    if (sent == "@")
+                        return GetIndicator(GCodeLineStatus.Info);
                 }
             }
 
@@ -853,9 +854,9 @@ namespace CNC.Controls
                 case GCodeLineStatus.Error:
                     return new StatusIndicator { Glyph = "✗", Brush = Brushes.Red };
                 case GCodeLineStatus.Info:
-                    return new StatusIndicator { Glyph = "?", Brush = Brushes.Yellow };
+                    return new StatusIndicator { Glyph = ">>", Brush = Brushes.Yellow };
                 default:
-                    return new StatusIndicator { Glyph = "", Brush = Brushes.Gray };
+                    return new StatusIndicator { Glyph = " ", Brush = Brushes.Gray };
             }
         }
 

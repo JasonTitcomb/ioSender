@@ -169,6 +169,7 @@ namespace CNC.Controls
         public Point3D CameraPosition { get; set; }
         public Vector3D CameraLookDirection { get; set; }
         public Vector3D CameraUpDirection { get; set; }
+        public double SplitterPosition { get; set; } = -1d;
     }
 
     [Serializable]

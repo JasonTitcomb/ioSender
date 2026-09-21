@@ -394,7 +394,17 @@ namespace GCode_Sender
             showProgramLimits();
 
             if (!AppConfig.Settings.GCodeViewer.IsEnabled)
-                tabGCode.Items.Remove(tab3D);
+            {
+                gcodeRenderer.Visibility = Visibility.Collapsed;
+                rendererSplitter.Visibility = Visibility.Collapsed;
+                colRenderer.Width = new GridLength(0);
+                colRendererSplitter.Width = new GridLength(0);
+            }
+            else if (AppConfig.Settings.GCodeViewer.SplitterPosition > 0d)
+            {
+                colGcodeText.Width = new GridLength(AppConfig.Settings.GCodeViewer.SplitterPosition, GridUnitType.Star);
+                colRenderer.Width = new GridLength(1d - AppConfig.Settings.GCodeViewer.SplitterPosition, GridUnitType.Star);
+            }
 
             if (GrblInfo.LatheModeEnabled)
                 MainWindow.EnableView(true, ViewType.LatheWizards);
@@ -449,6 +459,16 @@ namespace GCode_Sender
         {
             if (GrblInfo.IsLoaded)
                 showProgramLimits();
+        }
+
+        private void rendererSplitter_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            double total = colGcodeText.Width.Value + colRenderer.Width.Value;
+            if (total > 0d)
+            {
+                AppConfig.Settings.GCodeViewer.SplitterPosition = colGcodeText.Width.Value / total;
+                AppConfig.Settings.Save();
+            }
         }
 
         private void outside_MouseDown(object sender, MouseButtonEventArgs e)

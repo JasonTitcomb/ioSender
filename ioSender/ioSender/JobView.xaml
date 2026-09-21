@@ -54,10 +54,16 @@
             <cnccontrols:JobControl x:Name="GCodeSender" Margin="0,5,0,0" DockPanel.Dock="Bottom"/>
             <TabControl x:Name="tabGCode" TabStripPlacement="Bottom" DockPanel.Dock="Top" >
                 <TabItem x:Uid="tab_program" Header="Program">
-                    <cnccontrols:GcodeTextControl x:Name="gcodeTextControl"/>
-                </TabItem>
-                <TabItem x:Uid="tab_3DView" x:Name="tab3D" Header="3D View">
-                    <cncviewer:RenderControl x:Name="gcodeRenderer"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="colGcodeText" Width="*"/>
+                            <ColumnDefinition x:Name="colRendererSplitter" Width="Auto"/>
+                            <ColumnDefinition x:Name="colRenderer" Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <cnccontrols:GcodeTextControl x:Name="gcodeTextControl" Grid.Column="0"/>
+                        <GridSplitter x:Name="rendererSplitter" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeBehavior="PreviousAndNext" DragCompleted="rendererSplitter_DragCompleted"/>
+                        <cncviewer:RenderControl x:Name="gcodeRenderer" Grid.Column="2"/>
+                    </Grid>
                 </TabItem>
                 <TabItem x:Uid="tab_console" x:Name="tabConsole" Header="Console">
                     <cnccontrols:ConsoleControl/>

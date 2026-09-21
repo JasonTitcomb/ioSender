@@ -150,12 +150,13 @@ namespace CNC.Core
                 return Load(filename, sr);
         }
 
-        private bool Load(string filename, TextReader sr, bool addLineNumber = false)
+        private bool Load(string filename, TextReader sr)
         {
             bool ok = true, isComment;
-            uint ln;
+            uint ln = 1;
+            uint seqNum;
 
-            FileInfo file = new FileInfo(filename);
+            //FileInfo file = new FileInfo(filename);
 
             string block = sr.ReadLine();
 
@@ -166,31 +167,17 @@ namespace CNC.Core
                 try
                 {
                     block = block.Trim();
-                    if (Parser.ParseBlock(ref block, false, out ln, out isComment))
+                    if (Parser.ParseBlock(ref block, false, out seqNum, out isComment))
                     {
-                        if (ln > 0)
-                        {
-                            LineNumber = ln;
-                            addLineNumber = false;
-                        }
-                        else if (addLineNumber)
-                        {
-                            LineNumber += 10;
-                            block = "N" + LineNumber.ToString() + block;
-                        } else
-                            LineNumber++;
-
-                        blocks.Add(new GCodeBlock(LineNumber, block, block.Length + 1, isComment, Parser.ProgramEnd));
+                        blocks.Add(new GCodeBlock(ln, block, block.Length + 1, isComment, Parser.ProgramEnd));
                         while (commands.Count > 0)
                         {
                             block = commands.Dequeue();
-                            LineNumber++;
-                            if (addLineNumber)
-                                block = "N" + (LineNumber).ToString() + block;
-                            blocks.Add(new GCodeBlock(LineNumber, block, block.Length + 1, false, false));
+                            blocks.Add(new GCodeBlock(ln, block, block.Length + 1, false, false));
                         }
                     }
                     block = sr.ReadLine();
+                    ln++;
                 }
                 catch (Exception e)
                 {
