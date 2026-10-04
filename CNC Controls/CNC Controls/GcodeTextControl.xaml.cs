@@ -17,6 +17,7 @@ using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using ICSharpCode.AvalonEdit.Rendering;
 using CNC.Core;
+using CNC.GCode;
 
 namespace CNC.Controls
 {
@@ -37,6 +38,7 @@ namespace CNC.Controls
     {
         private readonly GCodeLineStatusMargin statusMargin = new GCodeLineStatusMargin();
         private GrblViewModel model;
+        private Dictionary<int, uint> editorLineToTokenLine = new Dictionary<int, uint>();
 
         public GcodeTextControl()
         {
@@ -47,10 +49,17 @@ namespace CNC.Controls
 
             Editor.TextArea.LeftMargins.Insert(1, statusMargin);
             Editor.TextArea.SelectionChanged += Editor_SelectionChanged;
+            Editor.TextChanged += Editor_TextChanged;
             GCode.File.GetEditedText = () => Editor.Text;
             ctxMenu.DataContext = this;
 
             Unloaded += UserControl_Unloaded;
+        }
+
+        private void Editor_TextChanged(object sender, EventArgs e)
+        {
+            // Invalidate the line-to-token mapping when text changes
+            editorLineToTokenLine.Clear();
         }
 
         private void ApplySyntaxHighlightingForTheme()
@@ -324,6 +333,8 @@ namespace CNC.Controls
 
         #endregion
 
+        public event Action<int, int> SelectedLineRangeChanged;
+
         //add AllowEditing property to enable/disable editing of the text
         public bool IsReadonly
         {
@@ -418,6 +429,9 @@ namespace CNC.Controls
             AppConfig.Settings.PropertyChanged -= AppConfig_PropertyChanged;
 
             DetachGCodeStatusHandlers();
+            
+            // Clear the line-to-token mapping
+            editorLineToTokenLine.Clear();
         }
 
         private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -525,6 +539,12 @@ namespace CNC.Controls
 
             SingleSelected = selected == 1 && canStart;
             MultipleSelected = selected >= 1 && canStart;
+
+            // Map editor line numbers to token line numbers
+            uint tokenStartLine = MapEditorLineToTokenLine(startLine);
+            uint tokenEndLine = MapEditorLineToTokenLine(endLine);
+
+            SelectedLineRangeChanged?.Invoke((int)tokenStartLine, (int)tokenEndLine);
         }
 
         private int GetSelectedLineCount(out int startLine, out int endLine)
@@ -543,6 +563,79 @@ namespace CNC.Controls
             endLine = Editor.Document.GetLineByOffset(endOffset).LineNumber;
 
             return (endLine - startLine) + 1;
+        }
+
+        private uint MapEditorLineToTokenLine(int editorLineNumber)
+        {
+            if (editorLineNumber <= 0)
+                return 0;
+
+            // Rebuild mapping if cache is empty
+            if (editorLineToTokenLine.Count == 0 && Editor.Document != null && Editor.Document.LineCount > 0)
+                BuildEditorToTokenLineMapping();
+
+            // Look up the token line for this editor line
+            if (editorLineToTokenLine.ContainsKey(editorLineNumber))
+                return editorLineToTokenLine[editorLineNumber];
+
+            // If not found, walk backwards to find the previous mapped line
+            for (int line = editorLineNumber - 1; line >= 1; line--)
+            {
+                if (editorLineToTokenLine.ContainsKey(line))
+                    return editorLineToTokenLine[line];
+            }
+
+            // Fallback: return editor line if no mapping found
+            return (uint)editorLineNumber;
+        }
+
+        private void BuildEditorToTokenLineMapping()
+        {
+            editorLineToTokenLine.Clear();
+
+            if (Editor.Document == null || Editor.Document.LineCount == 0)
+                return;
+
+            try
+            {
+                // Use StringReader to parse line-by-line like GCodeJob does
+                using (var reader = new StringReader(Editor.Text))
+                {
+                    var parser = new GCodeParser();
+                    string block;
+                    int editorLineNum = 1;
+
+                    while ((block = reader.ReadLine()) != null)
+                    {
+                        if (string.IsNullOrWhiteSpace(block))
+                        {
+                            editorLineNum++;
+                            continue;
+                        }
+
+                        block = block.Trim();
+                        bool isComment;
+                        uint lineNum;
+
+                        // ParseBlock returns true for valid lines or comments
+                        if (parser.ParseBlock(ref block, false, out lineNum, out isComment))
+                        {
+                            // Only map non-comment lines - these produce tokens
+                            // lineNum is the internal gcValues.N from the parser
+                            if (!isComment)
+                            {
+                                editorLineToTokenLine[editorLineNum] = lineNum;
+                            }
+                        }
+
+                        editorLineNum++;
+                    }
+                }
+            }
+            catch
+            {
+                // If parsing fails, leave mapping empty (fallback to editor line numbers)
+            }
         }
 
         private string GetLineText(int lineNumber)
@@ -778,6 +871,35 @@ namespace CNC.Controls
         }
 
         public void Refresh()
+        {
+            InvalidateVisual();
+        }
+
+        protected override void OnTextViewChanged(TextView oldTextView, TextView newTextView)
+        {
+            if (oldTextView != null)
+            {
+                oldTextView.VisualLinesChanged -= TextView_VisualLinesChanged;
+                oldTextView.ScrollOffsetChanged -= TextView_ScrollOffsetChanged;
+            }
+
+            base.OnTextViewChanged(oldTextView, newTextView);
+
+            if (newTextView != null)
+            {
+                newTextView.VisualLinesChanged += TextView_VisualLinesChanged;
+                newTextView.ScrollOffsetChanged += TextView_ScrollOffsetChanged;
+            }
+
+            InvalidateVisual();
+        }
+
+        private void TextView_VisualLinesChanged(object sender, EventArgs e)
+        {
+            InvalidateVisual();
+        }
+
+        private void TextView_ScrollOffsetChanged(object sender, EventArgs e)
         {
             InvalidateVisual();
         }

@@ -681,26 +681,27 @@ namespace CNC.Controls.Viewer
 
             if (model.LatheMode == LatheMode.Disabled)
             {
+                const double marginFactor = 1.1d;
                 double pos;
                 switch (Machine.RenderMode)
                 {
                     case RenderMode.Mode3D:
                     case RenderMode.Mode2DXY:
-                        pos = Math.Max(5d, Math.Max(bbox.SizeX, bbox.SizeY) / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
+                        pos = Math.Max(5d, marginFactor * Math.Max(bbox.SizeX, bbox.SizeY) / 2d / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
                         viewport.Camera.Position = new Point3D(centerX, centerY, centerZ + pos);
                         viewport.Camera.LookDirection = new Vector3D(0d, 0d, -pos);
                         viewport.Camera.UpDirection = new Vector3D(0d, 1d, 1d);
                         break;
 
                     case RenderMode.Mode2DXZ:
-                        pos = Math.Max(5d, Math.Max(bbox.SizeX, bbox.SizeZ) / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
+                        pos = Math.Max(5d, marginFactor * Math.Max(bbox.SizeX, bbox.SizeZ) / 2d / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
                         viewport.Camera.Position = new Point3D(centerX, centerY - pos, centerZ);
                         viewport.Camera.LookDirection = new Vector3D(0d, pos, 0d);
                         viewport.Camera.UpDirection = new Vector3D(0d, 1d, 1d);
                         break;
 
                     case RenderMode.Mode2DYZ:
-                        pos = Math.Max(5d, Math.Max(bbox.SizeY, bbox.SizeZ) / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
+                        pos = Math.Max(5d, marginFactor * Math.Max(bbox.SizeY, bbox.SizeZ) / 2d / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
                         viewport.Camera.Position = new Point3D(centerX + pos, centerY, centerZ);
                         viewport.Camera.LookDirection = new Vector3D(-pos, 0d, 0d);
                         viewport.Camera.UpDirection = new Vector3D(1d, 0d, 1d);
@@ -709,7 +710,8 @@ namespace CNC.Controls.Viewer
             }
             else
             {
-                double ypos = Math.Max(5d, Math.Max(bbox.SizeX, bbox.SizeZ) / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
+                const double marginFactor = 1.1d;
+                double ypos = Math.Max(5d, marginFactor * Math.Max(bbox.SizeX, bbox.SizeZ) / 2d / Math.Tan(ccamera.FieldOfView * Math.PI / 360d));
                 viewport.Camera.Position = new Point3D(centerX, centerY - ypos, centerZ);
                 viewport.Camera.LookDirection = new Vector3D(0d, ypos, 0d);
                 viewport.Camera.UpDirection = new Vector3D(-1d, 0d, 0d);
@@ -1490,6 +1492,104 @@ namespace CNC.Controls.Viewer
                 p.Offset(point0.X, point0.Y, point0.Z);
 
             return p;
+        }
+
+        private Point3D projectForRenderMode(Point3D point)
+        {
+            switch (Machine.RenderMode)
+            {
+                case RenderMode.Mode2DXY:
+                    return new Point3D(point.X, point.Y, 0d);
+
+                case RenderMode.Mode2DXZ:
+                    return new Point3D(point.X, 0d, point.Z);
+
+                case RenderMode.Mode2DYZ:
+                    return new Point3D(0d, point.Y, point.Z);
+
+                case RenderMode.Mode3D:
+                default:
+                    return point;
+            }
+        }
+
+        public void HighlightLines(int startLine, int endLine)
+        {
+            if (!IsJobLoaded)
+                return;
+
+            if (startLine <= 0 || endLine <= 0)
+            {
+                Machine.ExecutedLines = null;
+                return;
+            }
+
+            if (endLine < startLine)
+            {
+                int tmp = startLine;
+                startLine = endLine;
+                endLine = tmp;
+            }
+
+            var highlightEmu = new GCodeEmulator(true);
+            var points = new Point3DCollection();
+            Point3D segStart;
+
+            highlightEmu.SetStartPosition(Machine.StartPosition);
+
+            foreach (var cmd in highlightEmu.Execute(tokens))
+            {
+                uint lineNumber = cmd.Token.LineNumber;
+                segStart = cmd.Start;
+
+                if (lineNumber < startLine || lineNumber > endLine)
+                    continue;
+
+                switch (cmd.Token.Command)
+                {
+                    case Commands.G0:
+                    case Commands.G1:
+                        points.Add(projectForRenderMode(segStart));
+                        points.Add(projectForRenderMode(cmd.End));
+                        break;
+
+                    case Commands.G2:
+                    case Commands.G3:
+                        {
+                            var arcPoints = (cmd.Token as GCArc).GeneratePoints(highlightEmu.Plane, segStart.ToArray(), ArcResolution, highlightEmu.DistanceMode == DistanceMode.Incremental);
+                            for (int i = 1; i < arcPoints.Count; i++)
+                            {
+                                points.Add(projectForRenderMode(arcPoints[i - 1]));
+                                points.Add(projectForRenderMode(arcPoints[i]));
+                            }
+                        }
+                        break;
+
+                    case Commands.G5:
+                        {
+                            var splinePoints = (cmd.Token as GCCubicSpline).GeneratePoints(segStart.ToArray(), ArcResolution);
+                            for (int i = 1; i < splinePoints.Count; i++)
+                            {
+                                points.Add(projectForRenderMode(splinePoints[i - 1]));
+                                points.Add(projectForRenderMode(splinePoints[i]));
+                            }
+                        }
+                        break;
+
+                    case Commands.G5_1:
+                        {
+                            var splinePoints = (cmd.Token as GCQuadraticSpline).GeneratePoints(segStart.ToArray(), ArcResolution);
+                            for (int i = 1; i < splinePoints.Count; i++)
+                            {
+                                points.Add(projectForRenderMode(splinePoints[i - 1]));
+                                points.Add(projectForRenderMode(splinePoints[i]));
+                            }
+                        }
+                        break;
+                }
+            }
+
+            Machine.ExecutedLines = points.Count > 0 ? points : null;
         }
 
         public void AddRapidMove(Point3D point)

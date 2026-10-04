@@ -76,6 +76,11 @@ namespace CNC.Controls.Viewer
             //            gcodeView.ShowPosition();
         }
 
+        public void HighlightLines(int startLine, int endLine)
+        {
+            gcodeView.HighlightLines(startLine, endLine);
+        }
+
         #region Keypresshandlers
 
         private bool ToggleGrid(Key key)
